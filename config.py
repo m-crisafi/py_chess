@@ -2,12 +2,18 @@ configs = {
     # screen configs
     "width": 8,
     "height": 8,
-    "cell_width": 100,
+    "cell_size": 50,
+    "padding": 25,
+
+    # player index
+    "player_tags":
+        ["white",
+         "black"],
 
     # piece keys
     "pieces":
-        ["king",
-         "queen",
+        ["queen",
+         "king",
          "bishop",
          "knight",
          "rook",
