@@ -32,8 +32,8 @@ def load_and_scale(filename):
     img = pygame.image.load("assets/%s" % filename)
     img = pygame.transform.scale(
         img,
-        (configs["width"] * configs["cell_size"],
-         configs["height"] * configs["cell_size"]))
+        (configs["board_size"] * configs["cell_size"],
+         configs["board_size"] * configs["cell_size"]))
     return img
 
 

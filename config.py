@@ -1,7 +1,6 @@
 configs = {
     # screen configs
-    "width": 8,
-    "height": 8,
+    "board_size": 8,
     "cell_size": 50,
     "padding": 25,
 

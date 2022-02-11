@@ -83,7 +83,7 @@ def rook(chess: Chess, piece: Piece):
     :param piece: the given piece
     :return: [(x, y)]
     """
-    return trace_vertical_hortizonal(chess, piece)
+    return trace_vertical_horizontal(chess, piece)
 
 
 def knight(chess: Chess, piece: Piece):
@@ -106,7 +106,7 @@ def queen(chess: Chess, piece: Piece):
     """
     result = []
     result.extend(trace_diagonals(chess, piece))
-    result.extend(trace_vertical_hortizonal(chess, piece))
+    result.extend(trace_vertical_horizontal(chess, piece))
     return result
 
 
@@ -119,7 +119,7 @@ def king(chess: Chess, piece: Piece):
     """
     result = []
     result.extend(trace_diagonals(chess, piece, count=1))
-    result.extend(trace_vertical_hortizonal(chess, piece, count=1))
+    result.extend(trace_vertical_horizontal(chess, piece, count=1))
     return result
 
 
@@ -148,19 +148,21 @@ def w_pawn(chess: Chess, piece: Piece):
     """
     result = []
     coords = chess.piece_idx(piece)
-    if coords[1] == configs["height"] - 2:
+    if coords[1] == configs["board_size"] - 2:
         result.extend(trace_vertical(chess, piece, -1, count=2))
     else:
         result.extend(trace_vertical(chess, piece, -1, count=1))
     return result
 
 
-def trace_diagonals(chess: Chess, piece: Piece, count: int = configs["width"]):
+def trace_diagonals(chess: Chess,
+                    piece: Piece,
+                    count: int = configs["board_size"]):
     """
-
-    :param chess:
-    :param piece:
-    :param count:
+    Traces all diagonals from the given piece
+    :param chess: the current game state
+    :param piece: the given piece
+    :param count: how far to count from the given piece
     :return:
     """
     result = []
@@ -172,12 +174,14 @@ def trace_diagonals(chess: Chess, piece: Piece, count: int = configs["width"]):
     return result
 
 
-def trace_vertical_hortizonal(chess: Chess, piece: Piece, count: int = configs["height"]):
+def trace_vertical_horizontal(chess: Chess,
+                              piece: Piece,
+                              count: int = configs["board_size"]):
     """
-
-    :param chess:
-    :param piece:
-    :param count:
+    Traces all vertical and horizontal lines from the given piece
+    :param chess: the current game state
+    :param piece: the given piece
+    :param count: how far to count from the given piece
     :return:
     """
     result = []
@@ -192,14 +196,13 @@ def trace_vertical_hortizonal(chess: Chess, piece: Piece, count: int = configs["
 def trace_vertical(chess: Chess,
                    piece: Piece,
                    inc: int,
-                   count: int = configs["height"]):
+                   count: int = configs["board_size"]):
     """
-
-    :param chess:
-    :param piece:
-    :param inc:
-    :param count:
-    :return:
+    Traces vertically from the given piece until it hits count or another piece
+    :param chess: the current game state
+    :param piece: the given piece
+    :param count: how far to count from the given piece
+    :return: [(x, y)]
     """
     result = []
     coords = chess.piece_idx(piece)
@@ -209,7 +212,7 @@ def trace_vertical(chess: Chess,
 
     while step != count:
         y += inc
-        if y_in_range(y):
+        if coord_in_range(y):
             n_piece = chess.board[y][x]
             if n_piece:
                 if n_piece.color != piece.color:
@@ -229,15 +232,13 @@ def trace_vertical(chess: Chess,
 def trace_horizontal(chess: Chess,
                      piece: Piece,
                      inc: int,
-                     count: int =
-                     configs["width"]):
+                     count: int = configs["board_size"]):
     """
-
-    :param chess:
-    :param piece:
-    :param inc:
-    :param count:
-    :return:
+    Traces horizontally from the given piece until it hits count or another piece
+    :param chess: the current game state
+    :param piece: the given piece
+    :param count: how far to count from the given piece
+    :return: [(x, y)]
     """
     result = []
     coords = chess.piece_idx(piece)
@@ -247,7 +248,7 @@ def trace_horizontal(chess: Chess,
 
     while step != count:
         x += inc
-        if x_in_range(x):
+        if coord_in_range(x):
             n_piece = chess.board[y][x]
             if n_piece:
                 if n_piece.color != piece.color:
@@ -270,13 +271,11 @@ def trace_diagonal(chess: Chess,
                    y_inc: int,
                    count: int):
     """
-
-    :param chess:
-    :param piece:
-    :param x_inc:
-    :param y_inc:
-    :param count:
-    :return:
+    Traces diagonally from the given piece until it hits count or another piece
+    :param chess: the current game state
+    :param piece: the given piece
+    :param count: how far to count from the given piece
+    :return: [(x, y)]
     """
     result = []
     coords = chess.piece_idx(piece)
@@ -287,7 +286,7 @@ def trace_diagonal(chess: Chess,
     while step != count:
         x += x_inc
         y += y_inc
-        if x_in_range(x) and y_in_range(y):
+        if coord_in_range(x) and coord_in_range(y):
             n_piece = chess.board[y][x]
             if n_piece:
                 if n_piece.color != piece.color:
@@ -304,19 +303,10 @@ def trace_diagonal(chess: Chess,
     return result
 
 
-def x_in_range(x: int):
+def coord_in_range(coord: int):
     """
-
-    :param x:
-    :return:
+    Checks if the given coordinate value is in bounds of the screen
+    :param coord:
+    :return: boolean
     """
-    return 0 <= x < configs["width"]
-
-
-def y_in_range(y: int):
-    """
-
-    :param y:
-    :return:
-    """
-    return 0 <= y < configs["height"]
+    return 0 <= coord < configs["board_size"]

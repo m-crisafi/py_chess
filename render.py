@@ -4,14 +4,14 @@ from config import configs
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 HIGHLIGHT = (250, 237, 29)
-ALPHA = 192
+ALPHA = 128
 
 
 class Render:
 
     def __init__(self, screen, chess):
-        self.w = configs["width"]
-        self.h = configs["height"]
+        self.w = configs["board_size"]
+        self.h = configs["board_size"]
         self.cs = configs["cell_size"]
         self.p = configs["padding"]
         self.bw = self.w * self.cs
@@ -27,7 +27,7 @@ class Render:
         self.screen.fill(WHITE)
         self.__draw_board()
         self.__draw_border()
-        self.__draw_curent_moves(current_moves)
+        self.__draw_current_moves(current_moves)
         self.__draw_pieces()
         pygame.display.update()
 
@@ -79,7 +79,7 @@ class Render:
                  self.cs))
             self.screen.blit(self.chess.picked_up.img, rect)
 
-    def __draw_curent_moves(self, current_moves):
+    def __draw_current_moves(self, current_moves):
         s = pygame.Surface((self.sw, self.sh))
         s.set_alpha(ALPHA)
 

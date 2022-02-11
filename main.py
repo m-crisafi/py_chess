@@ -9,8 +9,8 @@ def open_window():
     pygame.display.set_caption('Chess')
 
     return pygame.display.set_mode(
-        ((configs["padding"] * 2) + (configs["width"] * configs["cell_size"]),
-         (configs["padding"] * 2) + (configs["height"] * configs["cell_size"])),
+        ((configs["padding"] * 2) + (configs["board_size"] * configs["cell_size"]),
+         (configs["padding"] * 2) + (configs["board_size"] * configs["cell_size"])),
         depth=32
     )
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
                 if not chess.picked_up:
                     coords = pygame.mouse.get_pos()
                     point = render.screen_coords_to_point(coords)
-                    if point:
+                    if point and chess.has_piece_at(point[0], point[1]):
                         if chess.board[point[1]][point[0]].color == turn:
                             chess.pickup(point[0], point[1])
 

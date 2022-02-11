@@ -20,16 +20,16 @@ class Chess:
         self.get_pieces()
 
     def get_pieces(self):
-        for y in range(configs["height"]):
-            for x in range(configs["width"]):
+        for y in range(configs["board_size"]):
+            for x in range(configs["board_size"]):
                 if self.board[y][x]:
                     self.pieces.append(self.board[y][x])
 
     def piece_idx(self, piece):
         if piece == self.picked_up:
             return self.last_position
-        for y in range(configs["height"]):
-            for x in range(configs["width"]):
+        for y in range(configs["board_size"]):
+            for x in range(configs["board_size"]):
                 if self.board[y][x] == piece:
                     return x, y
         return None
@@ -56,3 +56,6 @@ class Chess:
         self.board[self.last_position[1]][self.last_position[0]] = self.picked_up
         self.picked_up = None
         self.last_position = None
+
+    def has_piece_at(self, x, y):
+        return self.board[y][x] is not None

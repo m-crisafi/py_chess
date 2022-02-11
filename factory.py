@@ -19,7 +19,7 @@ class Factory:
 
     @staticmethod
     def create_board(images, fe_notation=DEFAULT_START):
-        pieces = [[None for x in range(configs["width"])] for y in range(configs["height"])]
+        pieces = [[None for x in range(configs["board_size"])] for y in range(configs["board_size"])]
         x = 0
         y = 0
 
@@ -60,7 +60,7 @@ class Factory:
 
             pieces[y][x] = n_piece
             x += 1
-            if x >= configs["width"]:
+            if x >= configs["board_size"]:
                 x = 0
 
         return pieces
