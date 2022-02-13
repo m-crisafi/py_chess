@@ -4,20 +4,27 @@ from config import configs
 LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I"]
 
 
-def split_image(filename, rows, cols):
+def split_image(filename) -> []:
+    """
+    Splits the passed chess tilemap into 2 rows and 6 columns
+    EXPECTED: K Q B N R P
+              k q b n r p
+    :param filename: the given filename
+    :return [images]:
+    """
     result = {}
 
     img = pygame.image.load("assets/%s" % filename)
     img = pygame.transform.scale(
         img,
-        (rows * configs["cell_size"],
-         cols * configs["cell_size"]))
+        (6 * configs["cell_size"],
+         2 * configs["cell_size"]))
 
-    for y in range(cols):
+    for y in range(2):
         color = configs["player_tags"][y]
         result[color] = []
 
-        for x in range(rows):
+        for x in range(6):
             image = img.subsurface(
                 x * configs["cell_size"],
                 y * configs["cell_size"],
@@ -29,6 +36,11 @@ def split_image(filename, rows, cols):
 
 
 def load_and_scale(filename):
+    """
+    Loads and scales the passed board image to the calculated board size
+    :param filename: the given filename
+    :return: image
+    """
     img = pygame.image.load("assets/%s" % filename)
     img = pygame.transform.scale(
         img,
@@ -37,5 +49,19 @@ def load_and_scale(filename):
     return img
 
 
-def idx_to_letter(value):
+def idx_to_letter(value) -> str:
+    """
+    Returns the letter corresponding to the given index
+    :param value:
+    :return: string
+    """
     return LETTERS[value]
+
+
+def coord_to_notation(coord: (int, int)) -> str:
+    """
+    Transforms a board coordinate into a chess notation sting, eg. E4
+    :param coord: the passed board index
+    :return: string
+    """
+    return str(coord[1] + 1) + idx_to_letter(coord[0])

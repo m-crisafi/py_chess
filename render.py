@@ -1,5 +1,7 @@
-import pygame, utils
+import pygame
+import utils
 from config import configs
+from models.chess import Chess
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -9,57 +11,116 @@ ALPHA = 128
 
 class Render:
 
-    def __init__(self, screen, chess):
-        self.w = configs["board_size"]
-        self.h = configs["board_size"]
-        self.cs = configs["cell_size"]
-        self.p = configs["padding"]
-        self.bw = self.w * self.cs
-        self.bh = self.h * self.cs
-        self.sw = self.bw + (self.p * 2)
-        self.sh = self.bh + (self.p * 2)
-        self.board_png = utils.load_and_scale("board.png")
+    def __init__(self,
+                 screen: pygame.surface,
+                 chess: Chess,
+                 history: [str]):
+        """
+        Constructs our renderer by pre calculating all the screen sizes
+        :param screen: the given pygame window
+        :param chess: the given game object (pointer)
+        :param history: list of past moves (pointer)
+        """
+        self.s = configs["board_size"]               # board size in cells
+        self.cs = configs["cell_size"]               # cell size
+        self.p = configs["padding"]                  # border padding
+        self.dw = configs["output_size"]             # output display width
+        self.op = configs["output_padding"]          # display text padding
+        self.bs = self.s * self.cs                   # board abs size
+        self.ds = self.bs + (self.p * 2)             # abs display x start
+        self.sw = self.bs + (self.p * 2) + self.dw   # screen abs width
+        self.sh = self.bs + (self.p * 2) + self.dw   # screen abs height
         self.screen = screen
         self.chess = chess
-        self.font = pygame.font.SysFont("arial", int(self.p / 3))
+        self.history = history
+        # load the board png
+        self.board_png = utils.load_and_scale("board.png")
+        # load the font for drawing the border
+        self.border_font = pygame.font.SysFont("arial", int(self.p / 3))
+        self.display_font = pygame.font.SysFont("arial", configs["output_text_size"])
 
-    def render(self, current_moves):
+    def render(self,
+               current_moves: [(int, int)]) -> None:
+        """
+        Main render function
+        :param current_moves: the list of avaliable moves as coordinates
+        :return: None
+        """
         self.screen.fill(WHITE)
         self.__draw_board()
         self.__draw_border()
         self.__draw_current_moves(current_moves)
+        self.__draw_display()
         self.__draw_pieces()
         pygame.display.update()
 
-    def __draw_board(self):
+    def __draw_board(self) -> None:
+        """
+        Draws the board to the screen
+        :return: None
+        """
         rect = pygame.Rect(
             (self.p, self.p),
-            (self.w, self.h))
+            (self.s, self.s))
         self.screen.blit(self.board_png, rect)
 
-    def __draw_border(self):
-        for x in range(self.w):
-            label = self.font.render(utils.idx_to_letter(x), True, BLACK)
-
+    def __draw_border(self) -> None:
+        """
+        Renders the letters and numbers to the boards border
+        :return: None
+        """
+        # iterate across the screen and draw the letters
+        for x in range(self.s):
+            label = self.border_font.render(utils.idx_to_letter(x), True, BLACK)
+            # get our labels (x, y) position and write it the screen
             x_start = self.p + (x * self.cs)
-            y_start = (self.p / 2) - (label.get_height() / 2)
+            y_top = (self.p / 2) - (label.get_height() / 2)
+            y_bottom = self.p + self.bs + y_top
             coords = (x_start + (self.cs / 2) - (label.get_width() / 2),
-                      y_start)
+                      y_top)
+            self.screen.blit(label, coords)
+            coords = (x_start + (self.cs / 2) - (label.get_width() / 2),
+                      y_bottom)
             self.screen.blit(label, coords)
 
-        for y in range(self.h):
-            new_y = (y - self.h + 1) * -1
-            label = self.font.render(str(new_y + 1), True, BLACK)
+        # iterate down the screen and draw the numbers
+        for y in range(self.s):
+            # invert the index draw 8...1
+            new_y = (y - self.s + 1) * -1
+            label = self.border_font.render(str(new_y + 1), True, BLACK)
 
-            x_start = (self.p / 2) - (label.get_width() / 2)
             y_start = self.p + (new_y * self.cs)
-            coords = (x_start,
+            x_left = (self.p / 2) - (label.get_width() / 2)
+            x_right = self.p + self.bs + x_left
+            coords = (x_left,
+                      y_start + (self.cs / 2) - (label.get_height() / 2))
+            self.screen.blit(label, coords)
+            coords = (x_right,
                       y_start + (self.cs / 2) - (label.get_height() / 2))
             self.screen.blit(label, coords)
 
-    def __draw_pieces(self):
-        for y in range(self.h):
-            for x in range(self.w):
+    def __draw_display(self) -> None:
+        """
+        Draws all previous moves to the output display
+        :return: None
+        """
+        for idx, move in enumerate(self.history):
+            move_string = "%s %s %s" % (move[0].color.title(),
+                                        move[0].key.title(),
+                                        utils.coord_to_notation((move[1], move[2])))
+            label = self.display_font.render(move_string, True, BLACK)
+            coords = (self.ds + self.op,
+                      self.p + (idx * label.get_height() + 10))
+            self.screen.blit(label, coords)
+
+    def __draw_pieces(self) -> None:
+        """
+        Renders every piece to the screen
+        :return: None
+        """
+        # iterate all the pieces and render them
+        for y in range(self.s):
+            for x in range(self.s):
                 piece = self.chess.board[y][x]
 
                 if piece:
@@ -70,6 +131,7 @@ class Render:
                          self.cs))
                     self.screen.blit(piece.img, rect)
 
+        # render the picked up piece
         if self.chess.picked_up:
             coords = pygame.mouse.get_pos()
             rect = pygame.Rect(
@@ -79,10 +141,18 @@ class Render:
                  self.cs))
             self.screen.blit(self.chess.picked_up.img, rect)
 
-    def __draw_current_moves(self, current_moves):
+    def __draw_current_moves(self,
+                             current_moves: [(int, int)]):
+        """
+        Generates an alpha layer and highlights any cells that can be moved to by the player
+        :param current_moves: list of valid move coordinates
+        :return:
+        """
+        # generate the alpha layer
         s = pygame.Surface((self.sw, self.sh))
         s.set_alpha(ALPHA)
 
+        # draw the boxes
         for coord in current_moves:
             rect = pygame.Rect(
                 (self.p + (self.cs * coord[0]),
@@ -91,21 +161,29 @@ class Render:
                  self.cs))
             pygame.draw.rect(s, HIGHLIGHT, rect)
 
+        # write it to our main screen
         self.screen.blit(s, (0, 0))
 
-    def in_board_bounds(self, point):
-        return (self.p < point[0] < (self.sw - self.p)) and \
-               (self.p < point[1] < (self.sw - self.p))
+    def in_board_bounds(self,
+                        point: (int, int)) -> bool:
+        """
+        Returns if the given abs coordinates are in bounds of the boards abs position
+        :param point: the given abs coordinates
+        :return: bool
+        """
+        return (self.p < point[0] < (self.p + self.bs)) and \
+               (self.p < point[1] < (self.p + self.bs))
 
-    def screen_coords_to_point(self, point):
+    def screen_coords_to_point(self,
+                               point: (int, int)) -> (int, int):
+        """
+        Returns the board indices for the given abs coordinate
+        :param point: the given abs coordinates
+        :return: (int, int)
+        """
         if self.in_board_bounds(point):
             return (
                 int((point[0] - self.p) / self.cs),
                 int((point[1] - self.p) / self.cs)
             )
         return None
-
-
-
-
-

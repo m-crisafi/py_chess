@@ -9,7 +9,7 @@ def open_window():
     pygame.display.set_caption('Chess')
 
     return pygame.display.set_mode(
-        ((configs["padding"] * 2) + (configs["board_size"] * configs["cell_size"]),
+        ((configs["padding"] * 2) + (configs["board_size"] * configs["cell_size"]) + configs["output_size"],
          (configs["padding"] * 2) + (configs["board_size"] * configs["cell_size"])),
         depth=32
     )
@@ -18,13 +18,14 @@ def open_window():
 if __name__ == "__main__":
     running = True
     turn = "white"
-    images = utils.split_image("pieces.png", 6, 2)
+    history = []
+    images = utils.split_image("pieces.png")
     screen = open_window()
     pygame.init()
     chess = Chess()
     chess.load_board(images)
     current_moves = models.move.get_all_moves(chess, "white")
-    render = Render(screen, chess)
+    render = Render(screen, chess, history)
 
     while running:
         for event in pygame.event.get():
@@ -38,13 +39,15 @@ if __name__ == "__main__":
                     if point and chess.has_piece_at(point[0], point[1]):
                         if chess.board[point[1]][point[0]].color == turn:
                             chess.pickup(point[0], point[1])
+                            current_moves = models.move.moves_for_piece(chess, chess.picked_up)
 
             if event.type == pygame.MOUSEBUTTONUP:
                 if chess.picked_up:
                     coords = pygame.mouse.get_pos()
                     point = render.screen_coords_to_point(coords)
                     if point and models.move.can_move(chess, chess.picked_up, point[0], point[1]):
-                        chess.put_down(point[0], point[1])
+                        move = chess.put_down(point[0], point[1])
+                        history.append(move)
                         if turn == "white":
                             turn = "black"
                             current_moves = models.move.get_all_moves(chess, "black")
@@ -53,5 +56,6 @@ if __name__ == "__main__":
                             current_moves = models.move.get_all_moves(chess, "white")
                     else:
                         chess.return_piece()
+                        current_moves = models.move.get_all_moves(chess, turn)
 
         render.render(current_moves)
