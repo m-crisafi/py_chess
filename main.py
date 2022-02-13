@@ -24,6 +24,7 @@ if __name__ == "__main__":
     pygame.init()
     chess = Chess()
     chess.load_board(images)
+    stored_moves = models.move.get_all_moves(chess, "white")
     current_moves = models.move.get_all_moves(chess, "white")
     render = Render(screen, chess, history)
 
@@ -57,5 +58,17 @@ if __name__ == "__main__":
                     else:
                         chess.return_piece()
                         current_moves = models.move.get_all_moves(chess, turn)
+
+        if not chess.picked_up:
+            coords = pygame.mouse.get_pos()
+            point = render.screen_coords_to_point(coords)
+            if point:
+                hovered_piece = chess.board[point[1]][point[0]]
+                if hovered_piece:
+                    current_moves = models.move.moves_for_piece(chess, hovered_piece)
+                else:
+                    current_moves = stored_moves
+            else:
+                current_moves = stored_moves
 
         render.render(current_moves)
