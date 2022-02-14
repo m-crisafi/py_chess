@@ -65,3 +65,17 @@ def coord_to_notation(coord: (int, int)) -> str:
     :return: string
     """
     return str(coord[1] + 1) + idx_to_letter(coord[0])
+
+
+def list_contains(data: [],
+                  value) -> bool:
+    """
+    Checks if the given list contains the passed coordinate value
+    :param data: the passed list
+    :param value: a given value
+    :return: boolean
+    """
+    for record in data:
+        if value == record:
+            return True
+    return False

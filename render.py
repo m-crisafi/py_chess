@@ -110,7 +110,7 @@ class Render:
                                         utils.coord_to_notation((move[1], move[2])))
             label = self.display_font.render(move_string, True, BLACK)
             coords = (self.ds + self.op,
-                      self.p + (idx * label.get_height() + 10))
+                      self.p + (idx * (label.get_height() + 5)))
             self.screen.blit(label, coords)
 
     def __draw_pieces(self) -> None:
@@ -142,27 +142,28 @@ class Render:
             self.screen.blit(self.chess.picked_up.img, rect)
 
     def __draw_current_moves(self,
-                             current_moves: [(int, int)]):
+                             current_moves: [(int, int)]) -> None:
         """
         Generates an alpha layer and highlights any cells that can be moved to by the player
         :param current_moves: list of valid move coordinates
-        :return:
+        :return: None
         """
-        # generate the alpha layer
-        s = pygame.Surface((self.sw, self.sh))
-        s.set_alpha(ALPHA)
-
-        # draw the boxes
-        for coord in current_moves:
-            rect = pygame.Rect(
-                (self.p + (self.cs * coord[0]),
-                 self.p + (self.cs * coord[1])),
-                (self.cs,
-                 self.cs))
-            pygame.draw.rect(s, HIGHLIGHT, rect)
-
-        # write it to our main screen
-        self.screen.blit(s, (0, 0))
+        if current_moves:
+            # generate the alpha layer
+            s = pygame.Surface((self.sw, self.sh))
+            s.set_alpha(ALPHA)
+    
+            # draw the boxes
+            for coord in current_moves:
+                rect = pygame.Rect(
+                    (self.p + (self.cs * coord[0]),
+                     self.p + (self.cs * coord[1])),
+                    (self.cs,
+                     self.cs))
+                pygame.draw.rect(s, HIGHLIGHT, rect)
+    
+            # write it to our main screen
+            self.screen.blit(s, (0, 0))
 
     def in_board_bounds(self,
                         point: (int, int)) -> bool:

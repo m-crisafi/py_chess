@@ -35,12 +35,12 @@ class Factory:
         pieces = [[None for x in range(configs["board_size"])] for y in range(configs["board_size"])]
         x = 0
         y = 0
+        id = 0
 
         # iterate our FEN character by character
         for char in fe_notation:
             # reset our next piece
             n_piece = None
-            color = None
 
             # move to next line if we hit the \
             if char == "/":
@@ -56,10 +56,12 @@ class Factory:
             # handle the creation of any pieces
             for record in PIECE_INFO:
                 if record[2] == char:
-                    n_piece = Piece(record[1], images["white"][record[0]], "white", False)
+                    n_piece = Piece(id, record[1], images["white"][record[0]], "white", False)
+                    id += 1
                     break
                 elif record[3] == char:
-                    n_piece = Piece(record[1], images["black"][record[0]], "black", False)
+                    n_piece = Piece(id, record[1], images["black"][record[0]], "black", False)
+                    id += 1
                     break
 
             # set our piece at the given coordinate and increment our x
