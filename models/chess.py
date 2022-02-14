@@ -1,5 +1,5 @@
 from models.piece import Piece
-from config import configs
+from configs import configs
 from factory import Factory
 
 DEFAULT_START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"

@@ -1,5 +1,5 @@
 import pygame
-from config import configs
+from configs import configs
 
 LETTERS = ["A", "B", "C", "D", "E", "F", "G", "H", "I"]
 

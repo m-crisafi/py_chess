@@ -1,6 +1,6 @@
 import pygame
 import utils
-from config import configs
+from configs import configs
 from models.chess import Chess
 
 WHITE = (255, 255, 255)
@@ -40,7 +40,7 @@ class Render:
         self.display_font = pygame.font.SysFont("arial", configs["output_text_size"])
 
     def render(self,
-               current_moves: [(int, int)]) -> None:
+               current_moves: (str, [(int, int)])) -> None:
         """
         Main render function
         :param current_moves: the list of avaliable moves as coordinates
@@ -142,19 +142,20 @@ class Render:
             self.screen.blit(self.chess.picked_up.img, rect)
 
     def __draw_current_moves(self,
-                             current_moves: [(int, int)]) -> None:
+                             current_moves: (str, [(int, int)])) -> None:
         """
         Generates an alpha layer and highlights any cells that can be moved to by the player
         :param current_moves: list of valid move coordinates
         :return: None
         """
-        if current_moves:
+        if (configs["show_piece_moves"] and current_moves[0] == "piece") or \
+           (configs["show_team_moves"] and current_moves[0] == "team"):
             # generate the alpha layer
             s = pygame.Surface((self.sw, self.sh))
             s.set_alpha(ALPHA)
     
             # draw the boxes
-            for coord in current_moves:
+            for coord in current_moves[1]:
                 rect = pygame.Rect(
                     (self.p + (self.cs * coord[0]),
                      self.p + (self.cs * coord[1])),

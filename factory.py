@@ -1,5 +1,5 @@
 import pygame
-from config import configs
+from configs import configs
 from models.piece import Piece
 
 # the row indices of our pieces in the png

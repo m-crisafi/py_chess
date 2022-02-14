@@ -1,5 +1,5 @@
 import utils
-from config import configs
+from configs import configs
 from models.chess import Chess
 from models.piece import Piece
 
@@ -21,24 +21,24 @@ class Move:
         }
 
     def moves_for_color(self,
-                        color: str) -> [(int, int)]:
+                        color: str) -> (str, [(int, int)]):
         """
         Returns the current moves for the given piece
         :param color: the given color
-        :return: [(int, int)]
+        :return: (str, [(int, int)])
         """
-        return self.current_moves[color]
+        return "team", self.current_moves[color]
 
     def moves_for_piece(self,
-                        piece: Piece) -> [(int, int)]:
+                        piece: Piece) -> (str, [(int, int)]):
         """
         Returns all moves for the given piece
         :param piece: the given piece
-        :return: [(int, int)]
+        :return: (str, [(int, int)])
         """
         for value in self.piece_moves:
             if value[0] == piece.id:
-                return value[1]
+                return "piece", value[1]
 
     def can_move(self,
                  piece: Piece,

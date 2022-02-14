@@ -6,6 +6,8 @@ configs = {
     "output_size": 150,
     "output_padding": 10,
     "output_text_size": 15,
+    "show_piece_moves": True,
+    "show_team_moves": False,
 
     # player index
     "player_tags":

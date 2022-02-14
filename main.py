@@ -1,13 +1,13 @@
 import pygame, utils
 from models.chess import Chess
-from config import configs
+from configs import configs
 from render import Render
 from models.move import Move
 
 
 def open_window() -> pygame.Surface:
     """
-    Opens the game window based on the settings in config.py
+    Opens the game window based on the settings in configs.py
     :return: pygame.Surface
     """
     pygame.display.set_caption('Chess')
@@ -25,6 +25,18 @@ def mouse_pos() -> (int, int):
     :return: (int, int)
     """
     return pygame.mouse.get_pos()
+
+
+def next_turn(current_turn: str) -> str:
+    """
+    Helper function to move to the next turn
+    :param current_turn: the current turn
+    :return: str
+    """
+    if current_turn == "white":
+        return "black"
+    else:
+        return "white"
 
 
 if __name__ == "__main__":
@@ -47,7 +59,7 @@ if __name__ == "__main__":
     moves = Move(chess)
     moves.update()
     current_moves = moves.moves_for_color(turn)
-    
+
     # initialise the rendering object
     render = Render(screen, chess, history)
 
@@ -61,31 +73,43 @@ if __name__ == "__main__":
             if event.type == pygame.QUIT:
                 running = False
 
-            # on mouse button down check
+            # check mouse down input
             if event.type == pygame.MOUSEBUTTONDOWN:
+
+                # on pick up
                 if not chess.picked_up:
                     point = render.screen_coords_to_point(mouse_pos())
+                    # ensure we have clicked the screen and we have a piece at that point
                     if point and chess.has_piece_at(point[0], point[1]):
+                        # ensure the piece is of the correct color
                         if chess.board[point[1]][point[0]].color == turn:
+                            # pick up the piece and load current moves
                             chess.pickup(point[0], point[1])
                             current_moves = moves.moves_for_piece(chess.picked_up)
 
-            # on mouse button up check
-            if event.type == pygame.MOUSEBUTTONUP:
-                if chess.picked_up:
+                # on put down
+                else:
                     point = render.screen_coords_to_point(mouse_pos())
+                    # ensure we have clicked the screen and the piece can move there
                     if point and moves.can_move(chess.picked_up, (point[0], point[1])):
+                        # put the piece down and record it
                         move = chess.put_down(point[0], point[1])
                         history.append(move)
-                        if turn == "white":
-                            turn = "black"
-                        else:
-                            turn = "white"
+                        # move to the next turn by updating the move object and loading the current moves
+                        turn = next_turn(turn)
                         moves.update()
                         current_moves = moves.moves_for_color(turn)
+                    # return the piece if we have clicked an invalid location
                     else:
                         chess.return_piece()
                         current_moves = moves.moves_for_color(turn)
+
+            # check keyboard inputs
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_s:
+                    configs["show_piece_moves"] = not configs["show_piece_moves"]
+                if event.key == pygame.K_a:
+                    configs["show_team_moves"] = not configs["show_team_moves"]
 
         # on hover check
         if not chess.picked_up:
@@ -99,4 +123,5 @@ if __name__ == "__main__":
             else:
                 current_moves = moves.moves_for_color(turn)
 
+        # render the board
         render.render(current_moves)
