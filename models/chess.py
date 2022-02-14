@@ -118,3 +118,14 @@ class Chess:
         :return: bool
         """
         return self.board[y][x] is not None
+
+    def get_king(self,
+                 color: str) -> Piece:
+        """
+        Returns the king for the given color
+        :param color: the given color
+        :return: Piece
+        """
+        for piece in self.pieces:
+            if piece.key == "king" and piece.color == color:
+                return piece

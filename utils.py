@@ -79,3 +79,15 @@ def list_contains(data: [],
         if value == record:
             return True
     return False
+
+
+def invert_team_color(value: str) -> str:
+    """
+    Inverts the passed team color
+    :param value: the current turn
+    :return: str
+    """
+    if value == "white":
+        return "black"
+    else:
+        return "white"

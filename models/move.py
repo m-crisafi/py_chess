@@ -1,4 +1,5 @@
 import utils
+import copy
 from configs import configs
 from models.chess import Chess
 from models.piece import Piece
@@ -49,14 +50,31 @@ class Move:
         :param coord: the given coordinate
         :return: bool
         """
-        for value in self.piece_moves:
-            if value[0] == piece.id:
-                return utils.list_contains(value[1], coord)
-        return False
+        opponents_color = utils.invert_team_color(piece.color)
+
+        # check if king can move but not move into check
+        if piece.key == "king":
+            return utils.list_contains(self.current_moves[opponents_color], (coord[0], coord[1]))
+
+        # check all other pieces, its assumed here the given piece is picked up
+        else:
+            for value in self.piece_moves:
+                if value[0] == piece.id:
+                    if utils.list_contains(value[1], coord):
+                        # if we can move to the position, recalculate and test for check
+                        self.chess.put_down(coord[0], coord[1])
+                        new_moves = self.__recalculate_for_color(opponents_color)
+                        king = self.chess.get_king(piece.color)
+                        coords = self.chess.piece_idx(king)
+                        result = utils.list_contains(new_moves, coords)
+                        # pickup the piece again to let the main game loop handle the put down
+                        self.chess.pickup(coord[0], coord[1])
+                        return not result
+            return False
 
     def update(self) -> None:
         """
-        Updates all lists of avaliable moves
+        Updates all lists of available moves
         :return: None
         """
         self.current_moves["white"] = []
@@ -67,6 +85,19 @@ class Move:
             moves = self.__check_moves_for_piece(piece)
             self.current_moves[piece.color].extend(moves)
             self.piece_moves.append((piece.id, moves))
+
+    def __recalculate_for_color(self,
+                                color) -> [(int, int)]:
+        """
+        Returns a new array with all the given colors moves.
+        :param color: the given color
+        :return: [(int, int]
+        """
+        result = []
+        for piece in self.chess.pieces:
+            if piece.color == color:
+                result.extend(self.__check_moves_for_piece(piece))
+        return result
 
     def __check_moves_for_piece(self,
                                 piece: Piece) -> [(int, int)]:
@@ -152,7 +183,8 @@ class Move:
         result = []
         result.extend(self.__trace_diagonals(piece, count=1))
         result.extend(self.__trace_vertical_horizontal(piece, count=1))
-        result.extend(self.__check_castling(piece))
+        result.extend(self.__check_castling(piece, -1))
+        result.extend(self.__check_castling(piece, 1))
         return result
 
     def __pawn(self,
@@ -176,7 +208,7 @@ class Move:
 
         result.extend(self.__trace(piece, 0, y_inc, count=count, take_pieces=False))
 
-        # check left an right diagonals
+        # check left and right diagonals
         for i in range(-1, 2, 2):
             c = self.chess.piece_idx(piece)
             x = c[0] + i
@@ -190,30 +222,32 @@ class Move:
         return result
 
     def __check_castling(self,
-                         king: Piece) -> [(int, int)]:
+                         king: Piece,
+                         inc: int) -> [(int, int)]:
+        """
+        Checks if the king can make a castling move in the given direction
+        :param king: the given king
+        :param inc: -1 or 1 for left and right
+        :return: [(int, int)]
+        """
         result = []
 
-        if king.key == "king" and not king.has_moved:
+        if not king.has_moved:
             coords = self.chess.piece_idx(king)
-            for step in range(-1, 2, 2):
-                for x in range(1, configs["board_size"]):
-                    if self.coord_in_range(x):
-                        n_piece = self.chess.board[coords[1]][coords[0] + (step * x)]
-                        if not n_piece:
-                            continue
-                        if n_piece.color == king.color and \
-                           n_piece.key == "rook" and \
-                           not n_piece.has_moved:
-                            if step < 0:
-                                result.append((coords[0] - 2, coords[1]))
-                                break
-                            else:
-                                result.append((coords[0] + 2, coords[1]))
-                                break
-                        else:
-                            break
-        else:
-            return result
+            for x in range(1, configs["board_size"]):
+                if self.coord_in_range(x):
+                    n_piece = self.chess.board[coords[1]][coords[0] + (inc * x)]
+                    if not n_piece:
+                        continue
+                    if n_piece.color == king.color and \
+                       n_piece.key == "rook" and \
+                       not n_piece.has_moved:
+                        if self.__check_is_in_check(king, (coords[0] + inc)) and \
+                           self.__check_is_in_check(king, (coords[0] + (inc * 2))):
+                            result.append((coords[0] + inc, coords[1]))
+                        break
+                    else:
+                        break
 
         return result
 
@@ -300,7 +334,7 @@ class Move:
         :param piece:
         :param x_inc:
         :param y_inc:
-        :return:
+        :return: (int, int)
         """
         result = []
         coords = self.chess.piece_idx(piece)
@@ -315,17 +349,6 @@ class Move:
                 return result
 
         return result
-
-    def __check_is_in_check(self,
-                            x: int,
-                            y: int) -> bool:
-        """
-        Checks whether the given tile is in check
-        :param x: the x position to test check
-        :param y: the y position to test check
-        :return:
-        """
-        print("TODO")
 
     @staticmethod
     def coord_in_range(coord: int) -> bool:

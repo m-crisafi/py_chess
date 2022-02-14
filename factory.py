@@ -7,7 +7,7 @@ WHITE_IDX = 0
 BLACK_IDX = 1
 
 """
-Piece constrcution values
+Piece construction values
 (index into the img array, piece key, white FEN, black FEN)
 """
 PIECE_INFO = [
@@ -68,5 +68,5 @@ class Factory:
             pieces[y][x] = n_piece
             x += 1
 
-        # return the genearted board
+        # return the generated board
         return pieces

@@ -21,22 +21,10 @@ def open_window() -> pygame.Surface:
 
 def mouse_pos() -> (int, int):
     """
-    Returns the current mosue position
+    Returns the current mouse position
     :return: (int, int)
     """
     return pygame.mouse.get_pos()
-
-
-def next_turn(current_turn: str) -> str:
-    """
-    Helper function to move to the next turn
-    :param current_turn: the current turn
-    :return: str
-    """
-    if current_turn == "white":
-        return "black"
-    else:
-        return "white"
 
 
 if __name__ == "__main__":
@@ -44,7 +32,7 @@ if __name__ == "__main__":
     screen = open_window()
     pygame.init()
 
-    # split up our pieces tilemap
+    # split up our pieces tile map
     images = utils.split_image("pieces.png")
     
     running = True      # loop variable
@@ -96,7 +84,7 @@ if __name__ == "__main__":
                         move = chess.put_down(point[0], point[1])
                         history.append(move)
                         # move to the next turn by updating the move object and loading the current moves
-                        turn = next_turn(turn)
+                        turn = utils.invert_team_color(turn)
                         moves.update()
                         current_moves = moves.moves_for_color(turn)
                     # return the piece if we have clicked an invalid location

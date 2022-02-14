@@ -5,7 +5,7 @@ from models.chess import Chess
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-HIGHLIGHT = (250, 237, 29)
+HIGHLIGHT_YELLOW = (250, 237, 29, 128)
 ALPHA = 128
 
 
@@ -151,9 +151,9 @@ class Render:
         if (configs["show_piece_moves"] and current_moves[0] == "piece") or \
            (configs["show_team_moves"] and current_moves[0] == "team"):
             # generate the alpha layer
-            s = pygame.Surface((self.sw, self.sh))
-            s.set_alpha(ALPHA)
-    
+            s = pygame.Surface((self.sw, self.sh), pygame.SRCALPHA)
+            s.fill((255, 255, 255, 0))
+
             # draw the boxes
             for coord in current_moves[1]:
                 rect = pygame.Rect(
@@ -161,8 +161,8 @@ class Render:
                      self.p + (self.cs * coord[1])),
                     (self.cs,
                      self.cs))
-                pygame.draw.rect(s, HIGHLIGHT, rect)
-    
+                pygame.draw.rect(s, HIGHLIGHT_YELLOW, rect)
+
             # write it to our main screen
             self.screen.blit(s, (0, 0))
 
