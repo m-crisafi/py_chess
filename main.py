@@ -1,4 +1,4 @@
-import pygame, utils
+import pygame, utils, sys
 from models.chess import Chess
 from configs import configs
 from render import Render
@@ -13,6 +13,7 @@ def open_window() -> pygame.Surface:
     pygame.display.set_caption('Chess')
 
     return pygame.display.set_mode(
+        # set mode takes an (int, int) tuple as the screen size
         ((configs["padding"] * 2) + (configs["board_size"] * configs["cell_size"]) + configs["output_size"],
          (configs["padding"] * 2) + (configs["board_size"] * configs["cell_size"])),
         depth=32
@@ -34,10 +35,9 @@ if __name__ == "__main__":
 
     # split up our pieces tile map
     images = utils.split_image("pieces.png")
-    
-    running = True      # loop variable
-    turn = "white"      # current turn
-    history = []        # history of moves
+
+    # loop variable
+    running = True
 
     # initialise the main chess object
     chess = Chess()
@@ -46,10 +46,10 @@ if __name__ == "__main__":
     # initialise the move checking object
     moves = Move(chess)
     moves.update()
-    current_moves = moves.moves_for_color(turn)
+    current_moves = moves.moves_for_team()
 
     # initialise the rendering object
-    render = Render(screen, chess, history)
+    render = Render(screen, chess)
 
     # run until we set the running variable to false
     while running:
@@ -68,9 +68,9 @@ if __name__ == "__main__":
                 if not chess.picked_up:
                     point = render.screen_coords_to_point(mouse_pos())
                     # ensure we have clicked the screen and we have a piece at that point
-                    if point and chess.has_piece_at(point[0], point[1]):
+                    if point and chess.has_piece_at_coord(point):
                         # ensure the piece is of the correct color
-                        if chess.board[point[1]][point[0]].color == turn:
+                        if chess.piece_at(point).color == chess.turn:
                             # pick up the piece and load current moves
                             chess.pickup(point[0], point[1])
                             current_moves = moves.moves_for_piece(chess.picked_up)
@@ -80,22 +80,21 @@ if __name__ == "__main__":
                     point = render.screen_coords_to_point(mouse_pos())
                     # ensure we have clicked the screen and the piece can move there
                     if point and moves.can_move(chess.picked_up, (point[0], point[1])):
-                        # put the piece down and record it
-                        move = chess.put_down(point[0], point[1])
-                        history.append(move)
-                        # move to the next turn by updating the move object and loading the current moves
-                        turn = utils.invert_team_color(turn)
-                        moves.update()
-                        current_moves = moves.moves_for_color(turn)
+                        # put the piece down and update if successful
+                        if chess.put_down(point[0], point[1]):
+                            moves.update()
+                            current_moves = moves.moves_for_team()
                     # return the piece if we have clicked an invalid location
                     else:
                         chess.return_piece()
-                        current_moves = moves.moves_for_color(turn)
+                        current_moves = moves.moves_for_team()
 
             # check keyboard inputs
             if event.type == pygame.KEYUP:
+                # toggle show piece moves
                 if event.key == pygame.K_s:
                     configs["show_piece_moves"] = not configs["show_piece_moves"]
+                # toggle show team moves
                 if event.key == pygame.K_a:
                     configs["show_team_moves"] = not configs["show_team_moves"]
 
@@ -103,13 +102,13 @@ if __name__ == "__main__":
         if not chess.picked_up:
             point = render.screen_coords_to_point(mouse_pos())
             if point:
-                hovered_piece = chess.board[point[1]][point[0]]
-                if hovered_piece and hovered_piece.color == turn:
+                hovered_piece = chess.piece_at(point)
+                if hovered_piece and hovered_piece.color == chess.turn:
                     current_moves = moves.moves_for_piece(hovered_piece)
                 else:
-                    current_moves = moves.moves_for_color(turn)
+                    current_moves = moves.moves_for_team()
             else:
-                current_moves = moves.moves_for_color(turn)
+                current_moves = moves.moves_for_team()
 
         # render the board
         render.render(current_moves)

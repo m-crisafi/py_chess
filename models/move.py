@@ -13,33 +13,42 @@ class Move:
         Initalises the move checking object with the game object
         :param chess: pointer to the current chess object
         """
-        self.chess = chess
-        self.piece_moves = []
+        self.__chess = chess
+        # stored as [(piece.id, (x, y)]
+        self.__current_moves = []
 
-        self.current_moves = {
-            "white": [],
-            "black": [],
-        }
-
-    def moves_for_color(self,
-                        color: str) -> (str, [(int, int)]):
+    def moves_for_team(self) -> (str, [(int, int)]):
         """
-        Returns the current moves for the given piece
-        :param color: the given color
+        Returns the current moves for the given piece. We return "team" attached
+        for the renderer to check configs against
         :return: (str, [(int, int)])
         """
-        return "team", self.current_moves[color]
+        result = []
+        for move in self.__current_moves:
+            result.extend(move[1])
+        return "team", result
+
+    def moves_for_id(self,
+                     piece_id: int) -> (str, [(int, int)]):
+        """
+        Searches the list of piece moves to find the matching ID
+        :param piece_id: the given piece id
+        :return: (str, [(int, int)])
+        """
+        for move in self.__current_moves:
+            if piece_id == move[0]:
+                return "piece", move[1]
+        return "piece", []
 
     def moves_for_piece(self,
                         piece: Piece) -> (str, [(int, int)]):
         """
-        Returns all moves for the given piece
+        Returns all moves for the given piece. We return "piece" attached for the
+        renderer to check configs against
         :param piece: the given piece
         :return: (str, [(int, int)])
         """
-        for value in self.piece_moves:
-            if value[0] == piece.id:
-                return "piece", value[1]
+        return self.moves_for_id(piece.id)
 
     def can_move(self,
                  piece: Piece,
@@ -50,53 +59,65 @@ class Move:
         :param coord: the given coordinate
         :return: bool
         """
-        opponents_color = utils.invert_team_color(piece.color)
-
-        # check if king can move but not move into check
-        if piece.key == "king":
-            return utils.list_contains(self.current_moves[opponents_color], (coord[0], coord[1]))
-
-        # check all other pieces, its assumed here the given piece is picked up
-        else:
-            for value in self.piece_moves:
-                if value[0] == piece.id:
-                    if utils.list_contains(value[1], coord):
-                        # if we can move to the position, recalculate and test for check
-                        self.chess.put_down(coord[0], coord[1])
-                        new_moves = self.__recalculate_for_color(opponents_color)
-                        king = self.chess.get_king(piece.color)
-                        coords = self.chess.piece_idx(king)
-                        result = utils.list_contains(new_moves, coords)
-                        # pickup the piece again to let the main game loop handle the put down
-                        self.chess.pickup(coord[0], coord[1])
-                        return not result
-            return False
+        return coord in self.moves_for_piece(piece)[1]
 
     def update(self) -> None:
         """
         Updates all lists of available moves
         :return: None
         """
-        self.current_moves["white"] = []
-        self.current_moves["black"] = []
-        self.piece_moves = []
+        self.__current_moves = []
 
-        for piece in self.chess.pieces:
-            moves = self.__check_moves_for_piece(piece)
-            self.current_moves[piece.color].extend(moves)
-            self.piece_moves.append((piece.id, moves))
+        for piece in self.__chess.pieces:
+            if piece.color == self.__chess.turn:
+                temp_moves = []
+                moves = self.__check_moves_for_piece(piece)
+                # self.__current_moves.append((piece.id, moves))
+                for coord in moves:
+                    if not self.__check_moves_into_check(piece, coord):
+                        temp_moves.append(coord)
+                if len(temp_moves) > 0:
+                    self.__current_moves.append((piece.id, temp_moves))
 
     def __recalculate_for_color(self,
                                 color) -> [(int, int)]:
         """
-        Returns a new array with all the given colors moves.
+        Returns a new list with all the given colors moves.
         :param color: the given color
-        :return: [(int, int]
+        :return: [(int, int)]
         """
         result = []
-        for piece in self.chess.pieces:
-            if piece.color == color:
-                result.extend(self.__check_moves_for_piece(piece))
+        for piece in self.__chess.pieces_for_color(color):
+            result.extend(self.__check_moves_for_piece(piece))
+        return result
+
+    def __check_moves_into_check(self,
+                                 piece: Piece,
+                                 to_coord: [int, int]):
+        """
+        Checks if the given move will trigger check
+        :param piece: the given piece
+        :param to_coord: the given coord
+        :return: true if in check, false if not
+        """
+        # place the piece for testing
+        temp_piece = self.__chess.piece_at(to_coord)
+        from_coord = self.__chess.piece_idx(piece)
+        self.__chess.set_piece(piece, to_coord)
+        self.__chess.set_piece(None, from_coord)
+
+        # recalculate moves for the opponent color
+        opponents_color = utils.invert_team_color(piece.color)
+        new_moves = self.__recalculate_for_color(opponents_color)
+
+        # check if the king occupies a potential move
+        king = self.__chess.get_king(piece.color)
+        coords = self.__chess.piece_idx(king)
+        result = coords in new_moves
+
+        # remove the piece we placed
+        self.__chess.set_piece(temp_piece, to_coord)
+        self.__chess.set_piece(piece, from_coord)
         return result
 
     def __check_moves_for_piece(self,
@@ -106,22 +127,19 @@ class Move:
         :param piece: the given piece
         :return: [(x, y)]
         """
-        result = []
         # check the type of each piece and call the appropriate function
         if piece.key == "bishop":
-            result.extend(self.__bishop(piece))
+            return self.__bishop(piece)
         elif piece.key == "rook":
-            result.extend(self.__rook(piece))
+            return self.__rook(piece)
         elif piece.key == "knight":
-            result.extend(self.__knight(piece))
+            return self.__knight(piece)
         elif piece.key == "queen":
-            result.extend(self.__queen(piece))
+            return self.__queen(piece)
         elif piece.key == "king":
-            result.extend(self.__king(piece))
+            return self.__king(piece)
         elif piece.key == "pawn":
-            result.extend(self.__pawn(piece))
-
-        return result
+            return self.__pawn(piece)
 
     def __bishop(self,
                  piece: Piece) -> [(int, int)]:
@@ -149,7 +167,6 @@ class Move:
         :return: [(x, y)]
         """
         result = []
-        coords = self.chess.piece_idx(piece)
         # up left / up right / down left / down right / left up / left down / right up / right down
         result.extend(self.__check_relative_to_piece(piece, -1, -2))
         result.extend(self.__check_relative_to_piece(piece, 1, -2))
@@ -202,20 +219,18 @@ class Move:
 
         # check if the pawn can make the double starting move
         if not piece.has_moved:
-            count = 2
+            result.extend(self.__trace(piece, 0, y_inc, count=2, take_pieces=False))
         else:
-            count = 1
-
-        result.extend(self.__trace(piece, 0, y_inc, count=count, take_pieces=False))
+            result.extend(self.__trace(piece, 0, y_inc, count=1, take_pieces=False))
 
         # check left and right diagonals
         for i in range(-1, 2, 2):
-            c = self.chess.piece_idx(piece)
+            c = self.__chess.piece_idx(piece)
             x = c[0] + i
             y = c[1] + y_inc
 
-            if Move.coord_in_range(x) and Move.coord_in_range(y):
-                n_piece = self.chess.board[y][x]
+            if Move.coords_in_range(x, y):
+                n_piece = self.__chess.board[y][x]
                 if n_piece and (n_piece.color != piece.color):
                     result.append((x, y))
 
@@ -233,17 +248,17 @@ class Move:
         result = []
 
         if not king.has_moved:
-            coords = self.chess.piece_idx(king)
+            coords = self.__chess.piece_idx(king)
             for x in range(1, configs["board_size"]):
                 if self.coord_in_range(x):
-                    n_piece = self.chess.board[coords[1]][coords[0] + (inc * x)]
+                    n_piece = self.__chess.board[coords[1]][coords[0] + (inc * x)]
                     if not n_piece:
                         continue
                     if n_piece.color == king.color and \
                        n_piece.key == "rook" and \
                        not n_piece.has_moved:
-                        if self.__check_is_in_check(king, (coords[0] + inc)) and \
-                           self.__check_is_in_check(king, (coords[0] + (inc * 2))):
+                        if self.__check_moves_into_check(king, (coords[0] + inc)) and \
+                           self.__check_moves_into_check(king, (coords[0] + (inc * 2))):
                             result.append((coords[0] + inc, coords[1]))
                         break
                     else:
@@ -301,26 +316,39 @@ class Move:
         :return: [(x, y)]
         """
         result = []
-        coords = self.chess.piece_idx(piece)
+        coords = self.__chess.piece_idx(piece)
         x = coords[0]
         y = coords[1]
         step = 0
 
-        while step != count:
+        if piece.key == "bishop":
+            print("HALT")
+            print("HALT")
+
+        # loop until we have hit our total count
+        while step < count:
+            # increment our target x and y positions from the passed incremenets
             x += x_inc
             y += y_inc
-            if Move.coord_in_range(x) and Move.coord_in_range(y):
-                n_piece = self.chess.board[y][x]
+            # check our new coordinate is in range
+            if Move.coords_in_range(x, y):
+                # get the piece at the given position (None if no piece exists)
+                n_piece = self.__chess.piece_at((x, y))
                 if n_piece:
+                    # if we hit an oppenents piece, take it
                     if (n_piece.color != piece.color) and take_pieces:
                         result.append((x, y))
                         return result
+                    # else we have hit our own color and need to return
                     else:
                         return result
+                # append the new move if no piece exists at the given coordinate
                 else:
                     result.append((x, y))
+            # return if we are out of range
             else:
                 return result
+
             step += 1
 
         return result
@@ -337,12 +365,12 @@ class Move:
         :return: (int, int)
         """
         result = []
-        coords = self.chess.piece_idx(piece)
+        coords = self.__chess.piece_idx(piece)
         x = coords[0] + x_inc
         y = coords[1] + y_inc
 
         if Move.coord_in_range(x) and Move.coord_in_range(y):
-            n_piece = self.chess.board[y][x]
+            n_piece = self.__chess.piece_at((x, y))
 
             if not n_piece or (n_piece and n_piece.color != piece.color):
                 result.append((x, y))
@@ -360,8 +388,8 @@ class Move:
         return 0 <= coord < configs["board_size"]
     
     @staticmethod
-    def coords_int_range(x: int,
-                         y: int) -> bool:
+    def coords_in_range(x: int,
+                        y: int) -> bool:
         """
         Checks if the given coordinate is in bounds of the screen
         :param x: the given x value

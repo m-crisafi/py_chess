@@ -13,13 +13,11 @@ class Render:
 
     def __init__(self,
                  screen: pygame.surface,
-                 chess: Chess,
-                 history: [str]):
+                 chess: Chess):
         """
         Constructs our renderer by pre calculating all the screen sizes
         :param screen: the given pygame window
         :param chess: the given game object (pointer)
-        :param history: list of past moves (pointer)
         """
         self.s = configs["board_size"]               # board size in cells
         self.cs = configs["cell_size"]               # cell size
@@ -32,7 +30,6 @@ class Render:
         self.sh = self.bs + (self.p * 2) + self.dw   # screen abs height
         self.screen = screen
         self.chess = chess
-        self.history = history
         # load the board png
         self.board_png = utils.load_and_scale("board.png")
         # load the font for drawing the border
@@ -104,10 +101,12 @@ class Render:
         Draws all previous moves to the output display
         :return: None
         """
-        for idx, move in enumerate(self.history):
-            move_string = "%s %s %s" % (move[0].color.title(),
-                                        move[0].key.title(),
-                                        utils.coord_to_notation((move[1], move[2])))
+        for idx, move in enumerate(self.chess.history):
+            # (Piece, from_coord, to_coord, took_piece)
+            move_string = "%s %s %s to %s" % (move[0].color,
+                                              move[0].key.title(),
+                                              utils.coord_to_notation(move[1]),
+                                              utils.coord_to_notation(move[2]))
             label = self.display_font.render(move_string, True, BLACK)
             coords = (self.ds + self.op,
                       self.p + (idx * (label.get_height() + 5)))

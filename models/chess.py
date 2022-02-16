@@ -1,3 +1,4 @@
+import utils
 from models.piece import Piece
 from configs import configs
 from factory import Factory
@@ -7,12 +8,21 @@ DEFAULT_START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 
 class Chess:
 
-    def __init__(self):
+    def __init__(self,
+                 turn: str = "white"):
+        """
+        Constructor for the chess object
+        :param turn: the loaded turn
+        """
         self.board = [[]]           # 2D list of pieces. None if no piece exists at [y][x]
         self.pieces = []            # list of all pieces of the board
         self.removed = []           # list of all removed pieces
         self.picked_up = None       # the currently picked up piece
         self.last_position = None   # the position of the picked up piece
+        self.turn = "white"         # the current players turn
+        self.history = []           # stores (Piece, from_coord, to_coord, took_piece)
+        self.white_king = None      # pointer to the white king
+        self.black_king = None      # pointer to the black king
 
     def load_board(self,
                    images: [],
@@ -32,6 +42,13 @@ class Chess:
                 if self.board[y][x]:
                     self.pieces.append(self.board[y][x])
 
+        # find the two kings and set the pointer
+        for piece in self.pieces:
+            if piece.key == "king" and piece.color == "white":
+                self.white_king = piece
+            elif piece.key == "king" and piece.color == "black":
+                self.black_king = piece
+
     def piece_idx(self,
                   piece: Piece) -> (int, int):
         """
@@ -50,20 +67,28 @@ class Chess:
 
     def put_down(self,
                  x: int,
-                 y: int) -> [(Piece, int, int)]:
+                 y: int) -> bool:
         """
         Places the given piece on the board, replacing the piece thats there.
         :param x: the target x position
         :param y: the target y potion
-        :return: [(Piece, int int)]
+        :return: bool (if successful)
         """
+        if (x, y) == self.last_position:
+            self.return_piece()
+            return False
+
         move_to = self.board[y][x]
+        took_piece = False
         # remove the piece at the coordinate if it exists
         if move_to:
             self.removed.append(move_to)
             self.pieces.remove(move_to)
+            took_piece = True
+
         # place the piece
         self.board[y][x] = self.picked_up
+        self.history.append((self.picked_up, self.last_position, (x, y), took_piece))
         self.picked_up.has_moved = True
 
         # check castling case condition
@@ -73,16 +98,18 @@ class Chess:
                 rook = self.board[y][0]
                 self.board[y][0] = None
                 self.board[y][self.last_position[0] - 1] = rook
+                rook.has_moved = True
             # check castled right
             elif x > self.last_position[0] + 1:
                 rook = self.board[y][configs["board_size"] - 1]
                 self.board[y][configs["board_size"] - 1] = None
                 self.board[y][self.last_position[0] + 1] = rook
+                rook.has_moved = True
 
-        result = (self.picked_up, x, y)
         self.picked_up = None
         self.last_position = None
-        return result
+        self.next_turn()
+        return True
 
     def pickup(self,
                x: int,
@@ -93,18 +120,17 @@ class Chess:
         :param y: the target y potion
         :return: None
         """
-        result = self.board[y][x]
+        self.picked_up = self.board[y][x]
         self.board[y][x] = None
-        self.picked_up = result
         self.last_position = (x, y)
-        return result
+        return self.picked_up
 
     def return_piece(self) -> None:
         """
         Returns the picked up piece to the table
         :return: None
         """
-        self.board[self.last_position[1]][self.last_position[0]] = self.picked_up
+        self.set_piece(self.picked_up, self.last_position)
         self.picked_up = None
         self.last_position = None
 
@@ -119,6 +145,57 @@ class Chess:
         """
         return self.board[y][x] is not None
 
+    def has_piece_at_coord(self,
+                           coord: int) -> bool:
+        """
+        Overload for has_peice_at(int, int)
+        :param coord: the target coordinate
+        """
+        return self.has_piece_at(coord[0], coord[1])
+
+    def next_turn(self) -> str:
+        """
+        Moves to the next players turn
+        :return: str
+        """
+        self.turn = utils.invert_team_color(self.turn)
+        return self.turn
+
+    def pieces_for_color(self,
+                         color: str) -> [Piece]:
+        """
+        Returns all pieces for the given color that are on the board
+        :param color: the given color
+        :return: [Piece]
+        """
+        result = []
+        for y in range(configs["board_size"]):
+            for x in range(configs["board_size"]):
+                piece = self.piece_at((x, y))
+                if piece and color == piece.color:
+                    result.append(piece)
+        return result
+
+    def piece_at(self,
+                 coord: (int, int)) -> Piece:
+        """
+        Returns the piece at the given board index
+        :param coord: the given board coordinate
+        :return: Piece
+        """
+        return self.board[coord[1]][coord[0]]
+
+    def set_piece(self,
+                  piece: Piece,
+                  coord: (int, int)) -> None:
+        """
+        Sets the piece at the given board coordinate
+        :param piece: the given piece
+        :param coord: the given coord
+        :return: None
+        """
+        self.board[coord[1]][coord[0]] = piece
+
     def get_king(self,
                  color: str) -> Piece:
         """
@@ -126,6 +203,7 @@ class Chess:
         :param color: the given color
         :return: Piece
         """
-        for piece in self.pieces:
-            if piece.key == "king" and piece.color == color:
-                return piece
+        if color == "white":
+            return self.white_king
+        else:
+            return self.black_king
