@@ -1,4 +1,5 @@
 import utils
+from models.move import Move
 from models.piece import Piece
 from configs import configs
 from factory import Factory
@@ -20,7 +21,7 @@ class Chess:
         self.picked_up = None       # the currently picked up piece
         self.last_position = None   # the position of the picked up piece
         self.turn = "white"         # the current players turn
-        self.history = []           # stores (Piece, from_coord, to_coord, took_piece)
+        self.history = []           # stores [Move]
         self.white_king = None      # pointer to the white king
         self.black_king = None      # pointer to the black king
 
@@ -88,7 +89,8 @@ class Chess:
 
         # place the piece
         self.board[y][x] = self.picked_up
-        self.history.append((self.picked_up, self.last_position, (x, y), took_piece))
+        move = Move(self.picked_up.id, self.last_position, (x, y), took_piece)
+        self.history.append(move)
         self.picked_up.has_moved = True
 
         # check castling case condition
@@ -185,6 +187,21 @@ class Chess:
         """
         return self.board[coord[1]][coord[0]]
 
+    def piece_for_id(self,
+                     piece_id: int) -> Piece:
+        """
+        Returns a piece with the given id
+        :param piece_id: the given id
+        :return: Piece
+        """
+        for piece in self.pieces:
+            if piece_id == piece.id:
+                return piece
+
+        for piece in self.removed:
+            if piece_id == piece.id:
+                return piece
+
     def set_piece(self,
                   piece: Piece,
                   coord: (int, int)) -> None:
@@ -208,7 +225,7 @@ class Chess:
         else:
             return self.black_king
 
-    def last_move(self) -> (Piece, int, int, bool):
+    def last_move(self) -> Move:
         """
         Returns the last move made
         :return: (Piece, from_coord, to_coord, took_piece)

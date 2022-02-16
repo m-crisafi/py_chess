@@ -5,7 +5,7 @@ configs = {
     "padding": 50,
     "output_size": 150,
     "output_padding": 10,
-    "output_text_size": 13,
+    "output_text_size": 16,
     "show_piece_moves": True,
     "show_team_moves": False,
 

@@ -2,7 +2,7 @@ import pygame, utils, sys
 from models.chess import Chess
 from configs import configs
 from render import Render
-from models.move import Move
+from models.checker import Move
 
 
 def open_window() -> pygame.Surface:

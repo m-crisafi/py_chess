@@ -64,7 +64,7 @@ def coord_to_notation(coord: (int, int)) -> str:
     :param coord: the passed board index
     :return: string
     """
-    return str(coord[1] + 1) + idx_to_letter(coord[0])
+    return idx_to_letter(coord[0]) + str(coord[1] + 1)
 
 
 def invert_team_color(value: str) -> str:
