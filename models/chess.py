@@ -207,3 +207,11 @@ class Chess:
             return self.white_king
         else:
             return self.black_king
+
+    def last_move(self) -> (Piece, int, int, bool):
+        """
+        Returns the last move made
+        :return: (Piece, from_coord, to_coord, took_piece)
+        """
+        if len(self.history) > 0:
+            return self.history[-1]
