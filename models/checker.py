@@ -5,7 +5,7 @@ from models.chess import Chess
 from models.piece import Piece
 
 
-class Move:
+class Checker:
 
     def __init__(self,
                  chess: Chess):

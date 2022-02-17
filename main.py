@@ -44,9 +44,9 @@ if __name__ == "__main__":
     chess.load_board(images)
 
     # initialise the move checking object
-    moves = Move(chess)
-    moves.update()
-    current_moves = moves.moves_for_team()
+    checker = Checker(chess)
+    checker.update()
+    current_moves = checker.moves_for_team()
 
     # initialise the rendering object
     render = Render(screen, chess)
@@ -73,7 +73,7 @@ if __name__ == "__main__":
                         if chess.piece_at(point).color == chess.turn:
                             # pick up the piece and load current moves
                             chess.pickup(point[0], point[1])
-                            current_moves = moves.moves_for_piece(chess.picked_up)
+                            current_moves = checker.moves_for_piece(chess.picked_up)
 
                 # on put down
                 else:
@@ -82,12 +82,12 @@ if __name__ == "__main__":
                     if point and moves.can_move(chess.picked_up, (point[0], point[1])):
                         # put the piece down and update if successful
                         if chess.put_down(point[0], point[1]):
-                            moves.update()
-                            current_moves = moves.moves_for_team()
+                            checker.update()
+                            current_moves = checker.moves_for_team()
                     # return the piece if we have clicked an invalid location
                     else:
                         chess.return_piece()
-                        current_moves = moves.moves_for_team()
+                        current_moves = checker.moves_for_team()
 
             # check keyboard inputs
             if event.type == pygame.KEYUP:
@@ -100,15 +100,19 @@ if __name__ == "__main__":
 
         # on hover check
         if not chess.picked_up:
+            # get the mouse pos and check covert it to (x, y) if it is on the board
             point = render.screen_coords_to_point(mouse_pos())
             if point:
+                # get the piece we are hovering over
                 hovered_piece = chess.piece_at(point)
+                # if it exists and its of the current players color, load the pieces moves
                 if hovered_piece and hovered_piece.color == chess.turn:
-                    current_moves = moves.moves_for_piece(hovered_piece)
+                    current_moves = checker.moves_for_piece(hovered_piece)
+                # load the teams moves if not
                 else:
-                    current_moves = moves.moves_for_team()
+                    current_moves = checker.moves_for_team()
             else:
-                current_moves = moves.moves_for_team()
+                current_moves = checker.moves_for_team()
 
         # render the board
         render.render(current_moves)
