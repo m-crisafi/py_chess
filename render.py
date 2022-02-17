@@ -1,9 +1,11 @@
 import pygame
 import utils
+from models.move import Move
 from configs import configs
 from models.chess import Chess
 
 WHITE = (255, 255, 255)
+BACKGROUND = (198, 167, 133)
 BLACK = (0, 0, 0)
 HIGHLIGHT_YELLOW = (250, 237, 29, 128)
 ALPHA = 128
@@ -33,17 +35,17 @@ class Render:
         # load the board png
         self.board_png = utils.load_and_scale("board.png")
         # load the font for drawing the border
-        self.border_font = pygame.font.SysFont("arial", int(self.p / 3))
-        self.display_font = pygame.font.SysFont("arial", configs["output_text_size"])
+        self.border_font = pygame.font.SysFont("arial", int(self.p / 3), bold=True)
+        self.display_font = pygame.font.SysFont("arial", configs["output_text_size"], bold=True)
 
     def render(self,
                current_moves: (str, [(int, int)])) -> None:
         """
         Main render function
-        :param current_moves: the list of avaliable moves as coordinates
+        :param current_moves: the list of available moves as coordinates
         :return: None
         """
-        self.screen.fill(WHITE)
+        self.screen.fill(BACKGROUND)
         self.__draw_board()
         self.__draw_border()
         self.__draw_current_moves(current_moves)
@@ -102,12 +104,15 @@ class Render:
         :return: None
         """
         for idx, move in enumerate(self.chess.history):
-            # (Piece, from_coord, to_coord, took_piece)
-            move_string = "%s %s %s to %s" % (move[0].color,
-                                              move[0].key.title(),
-                                              utils.coord_to_notation(move[1]),
-                                              utils.coord_to_notation(move[2]))
-            label = self.display_font.render(move_string, True, BLACK)
+            piece = self.chess.piece_for_id(move.piece_id)
+            move_string = "%s %s %s" % (piece.key.title(),
+                                        utils.coord_to_notation(move.from_coord),
+                                        utils.coord_to_notation(move.to_coord))
+            if piece.color == "white":
+                label = self.display_font.render(move_string, True, WHITE)
+            else:
+                label = self.display_font.render(move_string, True, BLACK)
+
             coords = (self.ds + self.op,
                       self.p + (idx * (label.get_height() + 5)))
             self.screen.blit(label, coords)
