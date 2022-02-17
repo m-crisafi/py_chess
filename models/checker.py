@@ -257,8 +257,6 @@ class Checker:
                     if n_piece.color == king.color and \
                        n_piece.key == "rook" and \
                        not n_piece.has_moved:
-                        if self.__check_moves_into_check(king, (coords[0] + inc)) and \
-                           self.__check_moves_into_check(king, (coords[0] + (inc * 2))):
                             result.append((coords[0] + inc, coords[1]))
                         break
                     else:
