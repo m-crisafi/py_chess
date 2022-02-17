@@ -257,7 +257,7 @@ class Checker:
                     if n_piece.color == king.color and \
                        n_piece.key == "rook" and \
                        not n_piece.has_moved:
-                            result.append((coords[0] + inc, coords[1]))
+                        result.append((coords[0] + inc, coords[1]))
                         break
                     else:
                         break
