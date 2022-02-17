@@ -1,5 +1,5 @@
 import utils
-import copy
+from timer import Timer
 from configs import configs
 from models.chess import Chess
 from models.piece import Piece
@@ -66,6 +66,8 @@ class Move:
         Updates all lists of available moves
         :return: None
         """
+        timer = Timer()
+        timer.start_timer()
         self.__current_moves = []
 
         for piece in self.__chess.pieces:
@@ -78,6 +80,9 @@ class Move:
                         temp_moves.append(coord)
                 if len(temp_moves) > 0:
                     self.__current_moves.append((piece.id, temp_moves))
+
+        timer.stop_timer()
+        print("Time elapsed: %s ms" % timer.elapsed_time_ms())
 
     def __recalculate_for_color(self,
                                 color) -> [(int, int)]:
@@ -223,16 +228,31 @@ class Move:
         else:
             result.extend(self.__trace(piece, 0, y_inc, count=1, take_pieces=False))
 
-        # check left and right diagonals
+        # check left and right diagonals and en passent
         for i in range(-1, 2, 2):
-            c = self.__chess.piece_idx(piece)
-            x = c[0] + i
-            y = c[1] + y_inc
+            coords = self.__chess.piece_idx(piece)
+            dia_x = coords[0] + i
+            dia_y = coords[1] + y_inc
+            pas_x = coords[0] + i
+            pas_y = coords[1]
 
-            if Move.coords_in_range(x, y):
-                n_piece = self.__chess.board[y][x]
+            # check diagonals
+            if Move.coords_in_range(dia_x, dia_y):
+                n_piece = self.__chess.board[dia_y][dia_x]
                 if n_piece and (n_piece.color != piece.color):
-                    result.append((x, y))
+                    result.append((dia_x, dia_y))
+
+            # check en passent
+            if Move.coords_in_range(pas_x, pas_y) and \
+               self.__chess.last_move():
+                n_piece = self.__chess.piece_at((pas_x, pas_y))
+                if n_piece and \
+                   n_piece.key == "pawn" and \
+                   n_piece.color != piece.color:
+                    move = self.__chess.last_move()
+                    if move[0].key == "pawn" and \
+                            abs(move[1][1] - move[2][1]) == 2:
+                        result.append((pas_x, pas_y + y_inc))
 
         return result
 
@@ -251,15 +271,13 @@ class Move:
             coords = self.__chess.piece_idx(king)
             for x in range(1, configs["board_size"]):
                 if self.coord_in_range(x):
-                    n_piece = self.__chess.board[coords[1]][coords[0] + (inc * x)]
+                    n_piece = self.__chess.board[coords[1]][coords[0] + (inc * x)]s
                     if not n_piece:
                         continue
                     if n_piece.color == king.color and \
                        n_piece.key == "rook" and \
                        not n_piece.has_moved:
-                        if self.__check_moves_into_check(king, (coords[0] + inc)) and \
-                           self.__check_moves_into_check(king, (coords[0] + (inc * 2))):
-                            result.append((coords[0] + inc, coords[1]))
+                        result.append((coords[0] + inc, coords[1]))
                         break
                     else:
                         break
@@ -321,10 +339,6 @@ class Move:
         y = coords[1]
         step = 0
 
-        if piece.key == "bishop":
-            print("HALT")
-            print("HALT")
-
         # loop until we have hit our total count
         while step < count:
             # increment our target x and y positions from the passed incremenets
@@ -369,7 +383,7 @@ class Move:
         x = coords[0] + x_inc
         y = coords[1] + y_inc
 
-        if Move.coord_in_range(x) and Move.coord_in_range(y):
+        if Move.coords_in_range(x, y):
             n_piece = self.__chess.piece_at((x, y))
 
             if not n_piece or (n_piece and n_piece.color != piece.color):
