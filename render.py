@@ -106,8 +106,8 @@ class Render:
         for idx, move in enumerate(self.chess.history):
             piece = self.chess.piece_for_id(move.piece_id)
             move_string = "%s %s %s" % (piece.key.title(),
-                                        utils.coord_to_notation(move.from_coord),
-                                        utils.coord_to_notation(move.to_coord))
+                                        utils.coord_to_notation(move.start_coords),
+                                        utils.coord_to_notation(move.end_coords))
             if piece.color == "white":
                 label = self.display_font.render(move_string, True, WHITE)
             else:

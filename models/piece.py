@@ -14,3 +14,12 @@ class Piece:
         self.img = img
         self.color = color
         self.has_moved = has_moved
+
+    def compare_color(self,
+                      color: str) -> bool:
+        """
+        Returns true if the given color matches piece.color
+        :param color: the given color
+        :return: bool
+        """
+        return self.color == color

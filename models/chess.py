@@ -75,22 +75,22 @@ class Chess:
         :param y: the target y potion
         :return: bool (if successful)
         """
+        move = Move(self.picked_up.id, self.last_position, (x, y), -1)
+
         if (x, y) == self.last_position:
             self.return_piece()
             return False
 
         move_to = self.board[y][x]
-        took_piece = False
+
         # remove the piece at the coordinate if it exists
         if move_to:
             self.removed.append(move_to)
-            self.pieces.remove(move_to)
-            took_piece = True
+            self.set_piece(None, coord)
+            move.took_piece = move_to.piece_id
 
         # place the piece
         self.board[y][x] = self.picked_up
-        move = Move(self.picked_up.id, self.last_position, (x, y), took_piece)
-        self.history.append(move)
         self.picked_up.has_moved = True
 
         # check castling case condition
@@ -108,6 +108,26 @@ class Chess:
                 self.board[y][self.last_position[0] + 1] = rook
                 rook.has_moved = True
 
+        # check en passent case condition
+        if self.picked_up.key == "pawn":
+            if self.picked_up.color == "white":
+                coord = (x, y + 1)
+                piece = self.piece_at(coord)
+                if piece and piece.key == "pawn" and \
+                   self.last_move().piece_id == piece.id:
+                    self.removed.append(piece)
+                    self.set_piece(None, coord)
+                    move.took_piece = piece.id
+            else:
+                coord = (x, y - 1)
+                piece = self.piece_at(coord)
+                if piece and piece.key == "pawn" and \
+                   self.last_move().piece_id == piece.id:
+                    self.removed.append(piece)
+                    self.set_piece(None, coord)
+                    move.took_piece = piece.id
+
+        self.history.append(move)
         self.picked_up = None
         self.last_position = None
         self.next_turn()

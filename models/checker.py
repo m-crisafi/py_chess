@@ -68,16 +68,16 @@ class Checker:
         """
         self.__current_moves = []
 
-        for piece in self.__chess.pieces:
-            if piece.color == self.__chess.turn:
-                temp_moves = []
-                moves = self.__check_moves_for_piece(piece)
-                # self.__current_moves.append((piece.id, moves))
-                for coord in moves:
-                    if not self.__check_moves_into_check(piece, coord):
-                        temp_moves.append(coord)
-                if len(temp_moves) > 0:
-                    self.__current_moves.append((piece.id, temp_moves))
+        for piece in self.__chess.pieces_for_color(self.__chess.turn):
+            temp_moves = []
+            moves = self.__check_moves_for_piece(piece)
+
+            for coord in moves:
+                if not self.__check_moves_into_check(piece, coord):
+                    temp_moves.append(coord)
+
+            if len(temp_moves) > 0:
+                self.__current_moves.append((piece.id, temp_moves))
 
     def __recalculate_for_color(self,
                                 color) -> [(int, int)]:
@@ -225,14 +225,29 @@ class Checker:
 
         # check left and right diagonals
         for i in range(-1, 2, 2):
-            c = self.__chess.piece_idx(piece)
-            x = c[0] + i
-            y = c[1] + y_inc
+            coords = self.__chess.piece_idx(piece)
+            x_dia = coords[0] + i
+            y_dia = coords[1] + y_inc
+            x_ep = coords[0] + i
+            y_ep = coords[1]
 
-            if Move.coords_in_range(x, y):
-                n_piece = self.__chess.board[y][x]
+            if Checker.coords_in_range(x_dia, y_dia):
+                n_piece = self.__chess.board[y_dia][x_dia]
                 if n_piece and (n_piece.color != piece.color):
-                    result.append((x, y))
+                    result.append((x_dia, y_dia))
+
+            # check en passent
+            if Checker.coords_in_range(x_ep, y_ep) and \
+               self.__chess.last_move():
+                n_piece = self.__chess.piece_at((x_ep, y_ep))
+                if n_piece and \
+                   n_piece.key == "pawn" and \
+                   n_piece.color != piece.color:
+                    move = self.__chess.last_move()
+                    piece = self.__chess.piece_for_id(move.piece_id)
+                    if piece.key == "pawn" and \
+                       abs(move.start_coords[1] - move.end_coords[1]) == 2:
+                        result.append((x_ep, y_ep + y_inc))
 
         return result
 
@@ -319,17 +334,13 @@ class Checker:
         y = coords[1]
         step = 0
 
-        if piece.key == "bishop":
-            print("HALT")
-            print("HALT")
-
         # loop until we have hit our total count
         while step < count:
             # increment our target x and y positions from the passed incremenets
             x += x_inc
             y += y_inc
             # check our new coordinate is in range
-            if Move.coords_in_range(x, y):
+            if Checker.coords_in_range(x, y):
                 # get the piece at the given position (None if no piece exists)
                 n_piece = self.__chess.piece_at((x, y))
                 if n_piece:
@@ -367,7 +378,7 @@ class Checker:
         x = coords[0] + x_inc
         y = coords[1] + y_inc
 
-        if Move.coord_in_range(x) and Move.coord_in_range(y):
+        if Checker.coord_in_range(x) and Checker.coord_in_range(y):
             n_piece = self.__chess.piece_at((x, y))
 
             if not n_piece or (n_piece and n_piece.color != piece.color):
@@ -394,4 +405,4 @@ class Checker:
         :param y: the given y value
         :return: boolean
         """
-        return Move.coord_in_range(x) and Move.coord_in_range(y)
+        return Checker.coord_in_range(x) and Checker.coord_in_range(y)

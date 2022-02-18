@@ -1,8 +1,11 @@
-import pygame, utils, sys
-from models.chess import Chess
+import pygame
+import utils
+import sys
 from configs import configs
 from render import Render
-from models.checker import Move
+from models.move import Move
+from models.checker import Checker
+from models.chess import Chess
 
 
 def open_window() -> pygame.Surface:
@@ -79,7 +82,7 @@ if __name__ == "__main__":
                 else:
                     point = render.screen_coords_to_point(mouse_pos())
                     # ensure we have clicked the screen and the piece can move there
-                    if point and moves.can_move(chess.picked_up, (point[0], point[1])):
+                    if point and checker.can_move(chess.picked_up, (point[0], point[1])):
                         # put the piece down and update if successful
                         if chess.put_down(point[0], point[1]):
                             checker.update()
