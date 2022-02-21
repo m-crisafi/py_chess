@@ -226,28 +226,29 @@ class Checker:
         # check left and right diagonals
         for i in range(-1, 2, 2):
             coords = self.__chess.piece_idx(piece)
-            x_dia = coords[0] + i
-            y_dia = coords[1] + y_inc
-            x_ep = coords[0] + i
-            y_ep = coords[1]
+            if coords:
+                x_dia = coords[0] + i
+                y_dia = coords[1] + y_inc
+                x_ep = coords[0] + i
+                y_ep = coords[1]
 
-            if Checker.coords_in_range(x_dia, y_dia):
-                n_piece = self.__chess.board[y_dia][x_dia]
-                if n_piece and (n_piece.color != piece.color):
-                    result.append((x_dia, y_dia))
+                if Checker.coords_in_range(x_dia, y_dia):
+                    n_piece = self.__chess.board[y_dia][x_dia]
+                    if n_piece and (n_piece.color != piece.color):
+                        result.append((x_dia, y_dia))
 
-            # check en passent
-            if Checker.coords_in_range(x_ep, y_ep) and \
-               self.__chess.last_move():
-                n_piece = self.__chess.piece_at((x_ep, y_ep))
-                if n_piece and \
-                   n_piece.key == "pawn" and \
-                   n_piece.color != piece.color:
-                    move = self.__chess.last_move()
-                    piece = self.__chess.piece_for_id(move.piece_id)
-                    if piece.key == "pawn" and \
-                       abs(move.start_coords[1] - move.end_coords[1]) == 2:
-                        result.append((x_ep, y_ep + y_inc))
+                # check en passent
+                if Checker.coords_in_range(x_ep, y_ep) and \
+                   self.__chess.last_move():
+                    n_piece = self.__chess.piece_at((x_ep, y_ep))
+                    if n_piece and \
+                       n_piece.key == "pawn" and \
+                       n_piece.color != piece.color:
+                        move = self.__chess.last_move()
+                        piece = self.__chess.piece_for_id(move.piece_id)
+                        if piece.key == "pawn" and \
+                           abs(move.start_coords[1] - move.end_coords[1]) == 2:
+                            result.append((x_ep, y_ep + y_inc))
 
         return result
 
@@ -266,13 +267,14 @@ class Checker:
             coords = self.__chess.piece_idx(king)
             for x in range(1, configs["board_size"]):
                 if self.coord_in_range(x):
-                    n_piece = self.__chess.board[coords[1]][coords[0] + (inc * x)]
+                    n_piece = self.__chess.piece_at((coords[0] + (inc * x),
+                                                     coords[1]))
                     if not n_piece:
                         continue
-                    if n_piece.color == king.color and \
-                       n_piece.key == "rook" and \
-                       not n_piece.has_moved:
-                        result.append((coords[0] + inc, coords[1]))
+                    elif n_piece.color == king.color and \
+                         n_piece.key == "rook" and \
+                         not n_piece.has_moved:
+                        result.append((coords[0] + (inc * 2), coords[1]))
                         break
                     else:
                         break

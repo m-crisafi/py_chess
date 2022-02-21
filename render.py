@@ -7,7 +7,8 @@ from models.chess import Chess
 WHITE = (255, 255, 255)
 BACKGROUND = (198, 167, 133)
 BLACK = (0, 0, 0)
-HIGHLIGHT_YELLOW = (250, 237, 29, 128)
+HIGHLIGHT_YELLOW = (200, 200, 29, 255)
+LAST_MOVE_HIGHLIGHT = (150, 150, 29, 128)
 ALPHA = 128
 
 
@@ -152,13 +153,31 @@ class Render:
         :param current_moves: list of valid move coordinates
         :return: None
         """
+        # generate the alpha layer
+        s = pygame.Surface((self.sw, self.sh), pygame.SRCALPHA)
+        s.fill((255, 255, 255, 0))
+
+        # draw the last move
+        last_move = self.chess.last_move()
+        if last_move:
+            start = pygame.Rect(
+                (self.p + (self.cs * last_move.start_coords[0]),
+                 self.p + (self.cs * last_move.start_coords[1])),
+                (self.cs,
+                 self.cs))
+
+            end = pygame.Rect(
+                (self.p + (self.cs * last_move.end_coords[0]),
+                 self.p + (self.cs * last_move.end_coords[1])),
+                (self.cs,
+                 self.cs))
+
+            pygame.draw.rect(s, LAST_MOVE_HIGHLIGHT, start)
+            pygame.draw.rect(s, LAST_MOVE_HIGHLIGHT, end)
+
         if (configs["show_piece_moves"] and current_moves[0] == "piece") or \
            (configs["show_team_moves"] and current_moves[0] == "team"):
-            # generate the alpha layer
-            s = pygame.Surface((self.sw, self.sh), pygame.SRCALPHA)
-            s.fill((255, 255, 255, 0))
 
-            # draw the boxes
             for coord in current_moves[1]:
                 rect = pygame.Rect(
                     (self.p + (self.cs * coord[0]),
@@ -167,8 +186,8 @@ class Render:
                      self.cs))
                 pygame.draw.rect(s, HIGHLIGHT_YELLOW, rect)
 
-            # write it to our main screen
-            self.screen.blit(s, (0, 0))
+        # write it to our main screen
+        self.screen.blit(s, (0, 0))
 
     def in_board_bounds(self,
                         point: (int, int)) -> bool:

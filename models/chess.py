@@ -86,8 +86,8 @@ class Chess:
         # remove the piece at the coordinate if it exists
         if move_to:
             self.removed.append(move_to)
-            self.set_piece(None, coord)
-            move.took_piece = move_to.piece_id
+            self.set_piece(None, (x, y))
+            move.took_piece = move_to.id
 
         # place the piece
         self.board[y][x] = self.picked_up
