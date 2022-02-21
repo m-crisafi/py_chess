@@ -30,6 +30,7 @@ def split_image(filename) -> []:
                 y * configs["cell_size"],
                 configs["cell_size"],
                 configs["cell_size"])
+
             result[color].append(image)
 
     return result

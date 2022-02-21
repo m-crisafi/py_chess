@@ -1,14 +1,14 @@
 import pygame
 import utils
-from models.move import Move
 from configs import configs
 from models.chess import Chess
+from models.selector import Selector
 
 WHITE = (255, 255, 255)
 BACKGROUND = (198, 167, 133)
 BLACK = (0, 0, 0)
 HIGHLIGHT_YELLOW = (200, 200, 29, 255)
-LAST_MOVE_HIGHLIGHT = (150, 150, 29, 128)
+LAST_MOVE_HIGHLIGHT = (150, 150, 29, 255)
 ALPHA = 128
 
 
@@ -28,9 +28,10 @@ class Render:
         self.dw = configs["output_size"]             # output display width
         self.op = configs["output_padding"]          # display text padding
         self.bs = self.s * self.cs                   # board abs size
-        self.ds = self.bs + (self.p * 2)             # abs display x start
+        self.ds = self.bs + (self.p * 2)             # abs display xy start
         self.sw = self.bs + (self.p * 2) + self.dw   # screen abs width
         self.sh = self.bs + (self.p * 2) + self.dw   # screen abs height
+        # pointers to game objects
         self.screen = screen
         self.chess = chess
         # load the board png
@@ -40,18 +41,27 @@ class Render:
         self.display_font = pygame.font.SysFont("arial", configs["output_text_size"], bold=True)
 
     def render(self,
-               current_moves: (str, [(int, int)])) -> None:
+               current_moves: (str, [(int, int)]) = None,
+               selector: Selector = None) -> None:
         """
         Main render function
         :param current_moves: the list of available moves as coordinates
+        :param selector: the currently selector
         :return: None
         """
         self.screen.fill(BACKGROUND)
         self.__draw_board()
         self.__draw_border()
-        self.__draw_current_moves(current_moves)
+
+        if current_moves:
+            self.__draw_current_moves(current_moves)
+
         self.__draw_display()
         self.__draw_pieces()
+
+        if selector:
+            self.__draw_selection_overlay(selector)
+
         pygame.display.update()
 
     def __draw_board(self) -> None:
@@ -158,22 +168,23 @@ class Render:
         s.fill((255, 255, 255, 0))
 
         # draw the last move
-        last_move = self.chess.last_move()
-        if last_move:
-            start = pygame.Rect(
-                (self.p + (self.cs * last_move.start_coords[0]),
-                 self.p + (self.cs * last_move.start_coords[1])),
-                (self.cs,
-                 self.cs))
+        if configs["show_last_move"]:
+            last_move = self.chess.last_move()
+            if last_move:
+                start = pygame.Rect(
+                    (self.p + (self.cs * last_move.start_coords[0]),
+                     self.p + (self.cs * last_move.start_coords[1])),
+                    (self.cs,
+                     self.cs))
 
-            end = pygame.Rect(
-                (self.p + (self.cs * last_move.end_coords[0]),
-                 self.p + (self.cs * last_move.end_coords[1])),
-                (self.cs,
-                 self.cs))
+                end = pygame.Rect(
+                    (self.p + (self.cs * last_move.end_coords[0]),
+                     self.p + (self.cs * last_move.end_coords[1])),
+                    (self.cs,
+                     self.cs))
 
-            pygame.draw.rect(s, LAST_MOVE_HIGHLIGHT, start)
-            pygame.draw.rect(s, LAST_MOVE_HIGHLIGHT, end)
+                pygame.draw.rect(s, LAST_MOVE_HIGHLIGHT, start)
+                pygame.draw.rect(s, LAST_MOVE_HIGHLIGHT, end)
 
         if (configs["show_piece_moves"] and current_moves[0] == "piece") or \
            (configs["show_team_moves"] and current_moves[0] == "team"):
@@ -188,6 +199,38 @@ class Render:
 
         # write it to our main screen
         self.screen.blit(s, (0, 0))
+
+    def __draw_selection_overlay(self,
+                                 selector: Selector) -> None:
+        """
+        Draws the selection overlay to the screen
+        :param selector: the given selector
+        :return: None
+        """
+        img_size = self.chess.pieces[0].img.get_height()
+
+        width = img_size * len(selector.pieces)
+        height = img_size
+        x_start = (self.screen.get_width() / 2) - (width / 2)
+        y_start = (self.screen.get_height() / 2) - (height / 2)
+
+        rect = pygame.Rect(x_start, y_start, width, height)
+
+        pygame.draw.rect(self.screen, WHITE, rect)
+        pygame.draw.rect(self.screen, BLACK, rect, 2)
+
+        for idx, piece in enumerate(selector.pieces):
+            rect = pygame.Rect(
+                x_start + (idx * img_size),
+                y_start,
+                img_size,
+                img_size)
+
+            if idx == selector.selected_index:
+                pygame.draw.rect(self.screen, HIGHLIGHT_YELLOW, rect)
+
+            pygame.draw.rect(self.screen, BLACK, rect, 1)
+            self.screen.blit(piece.img, rect)
 
     def in_board_bounds(self,
                         point: (int, int)) -> bool:

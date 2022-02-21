@@ -8,6 +8,7 @@ configs = {
     "output_text_size": 16,
     "show_piece_moves": True,
     "show_team_moves": False,
+    "show_last_move": True,
 
     # player index
     "player_tags":

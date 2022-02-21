@@ -1,11 +1,11 @@
 import pygame
 import utils
-import sys
 from configs import configs
+from models.selector import Selector
 from render import Render
-from models.move import Move
 from models.checker import Checker
 from models.chess import Chess
+from factory import Factory
 
 
 def open_window() -> pygame.Surface:
@@ -41,10 +41,11 @@ if __name__ == "__main__":
 
     # loop variable
     running = True
+    factory = Factory(images)
 
     # initialise the main chess object
     chess = Chess()
-    chess.load_board(images)
+    chess.load_board(factory)
 
     # initialise the move checking object
     checker = Checker(chess)
@@ -100,6 +101,10 @@ if __name__ == "__main__":
                 # toggle show team moves
                 if event.key == pygame.K_a:
                     configs["show_team_moves"] = not configs["show_team_moves"]
+                if event.key == pygame.K_d:
+                    configs["show_last_move"] = not configs["show_last_move"]
+                if event.key == pygame.K_f:
+                    fen = factory.to_fen_string(chess.board)
 
         # on hover check
         if not chess.picked_up:
@@ -116,6 +121,29 @@ if __name__ == "__main__":
                     current_moves = checker.moves_for_team()
             else:
                 current_moves = checker.moves_for_team()
+
+        # check for pawn promotion
+        if chess.pawn_promotion:
+            selector = Selector(factory.generate_promotion_pieces(utils.invert_team_color(chess.turn)))
+            selected = False
+
+            while not selected:
+                render.render(selector=selector)
+
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYUP:
+                        # toggle show piece moves
+                        if event.key == pygame.K_LEFT:
+                            selector.scroll_left()
+                        # toggle show team moves
+                        if event.key == pygame.K_RIGHT:
+                            selector.scroll_right()
+                        if event.key == pygame.K_SPACE:
+                            selected = True
+
+            chess.pawn_promotion = False
+            move = chess.last_move()
+            chess.replace_piece(selector.get_selected_piece(), move.end_coords)
 
         # render the board
         render.render(current_moves)

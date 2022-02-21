@@ -5,6 +5,7 @@ from configs import configs
 from factory import Factory
 
 DEFAULT_START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+OTHER = "rnbqkb1r/ppppp1P1/5p1n/7p/8/8/PPPPPPP1/RNBQKBNR"
 
 
 class Chess:
@@ -15,27 +16,28 @@ class Chess:
         Constructor for the chess object
         :param turn: the loaded turn
         """
-        self.board = [[]]           # 2D list of pieces. None if no piece exists at [y][x]
-        self.pieces = []            # list of all pieces of the board
-        self.removed = []           # list of all removed pieces
-        self.picked_up = None       # the currently picked up piece
-        self.last_position = None   # the position of the picked up piece
-        self.turn = "white"         # the current players turn
-        self.history = []           # stores [Move]
-        self.white_king = None      # pointer to the white king
-        self.black_king = None      # pointer to the black king
+        self.board = [[]]               # 2D list of pieces. None if no piece exists at [y][x]
+        self.pieces = []                # list of all pieces of the board
+        self.removed = []               # list of all removed pieces
+        self.picked_up = None           # the currently picked up piece
+        self.last_position = None       # the position of the picked up piece
+        self.turn = "white"             # the current players turn
+        self.history = []               # stores [Move]
+        self.white_king = None          # pointer to the white king
+        self.black_king = None          # pointer to the black king
+        self.pawn_promotion = False     # flag that is set when a pawn is ready for a promotion
 
     def load_board(self,
-                   images: [],
-                   fe_notation: str = DEFAULT_START) -> None:
+                   factory: Factory,
+                   fe_notation: str = OTHER) -> None:
         """
         Loads the board from the given FEN
-        :param images: list of chess piece images
+        :param factory: the factory to use
         :param fe_notation: the given FEN
         :return: None
         """
         # load the board using the factory method
-        self.board = Factory.create_board(images, fe_notation)
+        self.board = factory.create_board(fe_notation)
 
         # iterate the board and append all pieces to the list
         for y in range(configs["board_size"]):
@@ -108,9 +110,10 @@ class Chess:
                 self.board[y][self.last_position[0] + 1] = rook
                 rook.has_moved = True
 
-        # check en passent case condition
+        # check en passent and pawn promotion case condition
         if self.picked_up.key == "pawn":
             if self.picked_up.color == "white":
+                # en passent
                 coord = (x, y + 1)
                 piece = self.piece_at(coord)
                 if piece and piece.key == "pawn" and \
@@ -118,7 +121,11 @@ class Chess:
                     self.removed.append(piece)
                     self.set_piece(None, coord)
                     move.took_piece = piece.id
+                # pawn promotion
+                if y == 0:
+                    self.pawn_promotion = True
             else:
+                # en passent
                 coord = (x, y - 1)
                 piece = self.piece_at(coord)
                 if piece and piece.key == "pawn" and \
@@ -126,6 +133,9 @@ class Chess:
                     self.removed.append(piece)
                     self.set_piece(None, coord)
                     move.took_piece = piece.id
+                # pawn promotion
+                if y == configs["board_size"] - 1:
+                    self.pawn_promotion = True
 
         self.history.append(move)
         self.picked_up = None
@@ -221,6 +231,20 @@ class Chess:
         for piece in self.removed:
             if piece_id == piece.id:
                 return piece
+
+    def replace_piece(self,
+                      piece: Piece,
+                      coords: [int, int]) -> None:
+        """
+        Replaces the piece at the given index
+        :param piece: the piece to replace with
+        :param coords: the coordinate to replace
+        :return: None
+        """
+        to_replace = self.piece_at(coords)
+        self.removed.append(to_replace)
+        self.pieces.append(piece)
+        self.set_piece(piece, coords)
 
     def set_piece(self,
                   piece: Piece,
