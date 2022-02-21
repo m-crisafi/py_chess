@@ -2,6 +2,9 @@ from models.piece import Piece
 
 
 class Selector:
+    """
+    Class for managing pawn promotion. 
+    """
 
     def __init__(self, pieces):
         """

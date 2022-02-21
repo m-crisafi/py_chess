@@ -5,7 +5,6 @@ from configs import configs
 from factory import Factory
 
 DEFAULT_START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
-OTHER = "rnbqkb1r/ppppp1P1/5p1n/7p/8/8/PPPPPPP1/RNBQKBNR"
 
 
 class Chess:
@@ -29,7 +28,7 @@ class Chess:
 
     def load_board(self,
                    factory: Factory,
-                   fe_notation: str = OTHER) -> None:
+                   fe_notation: str = DEFAULT_START) -> None:
         """
         Loads the board from the given FEN
         :param factory: the factory to use
@@ -232,9 +231,9 @@ class Chess:
             if piece_id == piece.id:
                 return piece
 
-    def replace_piece(self,
-                      piece: Piece,
-                      coords: [int, int]) -> None:
+    def replace_with_new_piece(self,
+                               piece: Piece,
+                               coords: [int, int]) -> None:
         """
         Replaces the piece at the given index
         :param piece: the piece to replace with

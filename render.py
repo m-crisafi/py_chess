@@ -211,8 +211,8 @@ class Render:
 
         width = img_size * len(selector.pieces)
         height = img_size
-        x_start = (self.screen.get_width() / 2) - (width / 2)
-        y_start = (self.screen.get_height() / 2) - (height / 2)
+        x_start = self.p + (self.bs / 2) - (width / 2)
+        y_start = self.p + (self.bs / 2) - (height / 2)
 
         rect = pygame.Rect(x_start, y_start, width, height)
 
